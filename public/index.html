@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activity Confirmation Email Service | Control Center</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <span class="brand-icon">⚡</span>
+        <div>
+          <h1>Activity Email Notification Service</h1>
+          <p class="brand-tagline">Automated transactional confirmation emails for website user activities</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <a href="/shopledger.html" class="btn btn-outline btn-sm" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">🏪 Open ShopLedger App</a>
+        <div id="connectionBadge" class="status-badge loading">Checking status...</div>
+        <button id="refreshBtn" class="btn btn-outline btn-sm">↻ Refresh</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <div class="nav-container">
+      <button class="tab-btn active" data-tab="simulator">🚀 Live Activity Simulator</button>
+      <button class="tab-btn" data-tab="history">📋 Activity & Email Log <span id="logCount" class="counter">0</span></button>
+      <button class="tab-btn" data-tab="templates">🎨 Template Inspector</button>
+      <button class="tab-btn" data-tab="integration">🔌 Integration Guide</button>
+      <button class="tab-btn" data-tab="settings">⚙️ SMTP & Configuration</button>
+    </div>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="main-container">
+    
+    <!-- TAB 1: Activity Simulator -->
+    <section id="tab-simulator" class="tab-pane active">
+      <div class="grid-2col">
+        <!-- Target User Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2>1. Set Target Recipient</h2>
+            <span class="badge badge-blue">Recipient Details</span>
+          </div>
+          <div class="card-body">
+            <p class="text-muted text-sm mb-4">
+              When an activity happens on your website, a confirmation email will be generated and dispatched to this user.
+            </p>
+            <div class="form-group">
+              <label for="userEmail">Recipient Email Address <span class="required">*</span></label>
+              <input type="email" id="userEmail" class="form-control" value="developer@example.com" placeholder="name@domain.com">
+            </div>
+            <div class="form-group">
+              <label for="userName">Recipient Full Name</label>
+              <input type="text" id="userName" class="form-control" value="Alex Morgan" placeholder="e.g. Alex Morgan">
+            </div>
+            <div class="info-callout">
+              <span class="callout-icon">💡</span>
+              <div class="callout-body">
+                <strong>Zero-Config Test Mode Active:</strong> In development, emails are routed via Ethereal test inbox. You'll get an instant web preview link to inspect the email without spamming real inboxes!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trigger Preset Activities Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2>2. Trigger Website Activity</h2>
+            <span class="badge badge-green">Instant Test</span>
+          </div>
+          <div class="card-body">
+            <p class="text-muted text-sm mb-4">
+              Simulate actions that happen on your website. Click any button to fire the notification service:
+            </p>
+            
+            <div class="activity-buttons-grid">
+              <button class="action-btn" data-action="login">
+                <span class="action-icon">🔑</span>
+                <span class="action-title">User Signed In</span>
+                <span class="action-desc">Dispatches security login alert with device & IP</span>
+              </button>
+
+              <button class="action-btn" data-action="password_change">
+                <span class="action-icon">🛡️</span>
+                <span class="action-title">Password Changed</span>
+                <span class="action-desc">Dispatches immediate security alert & recovery button</span>
+              </button>
+
+              <button class="action-btn" data-action="signup">
+                <span class="action-icon">🎉</span>
+                <span class="action-title">New Registration</span>
+                <span class="action-desc">Dispatches welcome email with dashboard link</span>
+              </button>
+
+              <button class="action-btn" data-action="profile_update">
+                <span class="action-icon">👤</span>
+                <span class="action-title">Profile Updated</span>
+                <span class="action-desc">Confirms modified name, avatar, or preferences</span>
+              </button>
+
+              <button class="action-btn" data-action="order_placed">
+                <span class="action-icon">🛒</span>
+                <span class="action-title">Order Placed</span>
+                <span class="action-desc">Dispatches itemized order receipt & tracking</span>
+              </button>
+
+              <button class="action-btn" data-action="custom_modal">
+                <span class="action-icon">✨</span>
+                <span class="action-title">Custom Activity...</span>
+                <span class="action-desc">Define your own custom website event</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Result Toast / Box -->
+      <div id="latestResultBox" class="result-box hidden">
+        <div class="result-box-header">
+          <div class="result-status">
+            <span id="resultIcon" class="result-icon">✅</span>
+            <div>
+              <h3 id="resultTitle">Activity Email Sent!</h3>
+              <p id="resultSubtitle" class="text-sm text-muted">Delivery receipt confirmed.</p>
+            </div>
+          </div>
+          <div class="result-actions">
+            <a id="resultPreviewBtn" href="#" target="_blank" class="btn btn-primary btn-sm">🔍 Open Email Preview</a>
+          </div>
+        </div>
+        <div class="result-box-body">
+          <div class="meta-inline-grid">
+            <div><span class="meta-label">Activity Type:</span> <strong id="resActivityType">-</strong></div>
+            <div><span class="meta-label">Recipient:</span> <strong id="resRecipient">-</strong></div>
+            <div><span class="meta-label">Subject:</span> <strong id="resSubject">-</strong></div>
+            <div><span class="meta-label">Delivery Mode:</span> <strong id="resMode">-</strong></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: Activity & Email History -->
+    <section id="tab-history" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <h2>Activity & Delivery Audit Log</h2>
+          <div class="header-buttons">
+            <button id="clearLogBtn" class="btn btn-outline btn-sm">Clear History</button>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Activity Type</th>
+                  <th>Recipient</th>
+                  <th>Subject</th>
+                  <th>Status</th>
+                  <th>Email Preview</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-6">No activities recorded yet. Trigger an activity from the simulator!</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: Template Inspector -->
+    <section id="tab-templates" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <h2>Responsive Email Template Gallery</h2>
+          <div class="template-selector-group">
+            <label for="templateSelect">Select Template:</label>
+            <select id="templateSelect" class="form-control form-control-sm">
+              <option value="login">🔑 New Sign-In (Security Alert)</option>
+              <option value="password_change">🛡️ Password Changed</option>
+              <option value="signup">🎉 Welcome & Registration</option>
+              <option value="profile_update">👤 Profile Updated</option>
+              <option value="order_placed">🛒 Order Placed / Receipt</option>
+              <option value="custom">📌 Custom / Generic Activity</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="template-preview-wrapper">
+            <iframe id="templateFrame" src="/api/activity/templates/preview/login" title="Template Preview"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: Integration Guide -->
+    <section id="tab-integration" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <h2>How to Send Confirmation Emails From Your Website</h2>
+          <span class="badge badge-purple">Integration Guide</span>
+        </div>
+        <div class="card-body">
+          <p class="mb-4">
+            You can trigger confirmation emails from any website frontend or backend using our REST API or drop-in SDKs:
+          </p>
+
+          <div class="code-tabs">
+            <button class="code-tab-btn active" data-lang="js">Frontend JavaScript</button>
+            <button class="code-tab-btn" data-lang="node">Node.js / Express</button>
+            <button class="code-tab-btn" data-lang="python">Python / Django / Flask</button>
+            <button class="code-tab-btn" data-lang="curl">cURL / REST API</button>
+          </div>
+
+          <!-- JavaScript snippet -->
+          <div id="code-js" class="code-block active">
+            <pre><code>&lt;!-- 1. Include the drop-in client SDK in your website --&gt;
+&lt;script src="http://localhost:3000/sdk/website-tracker.js"&gt;&lt;/script&gt;
+
+&lt;script&gt;
+  // 2. Initialize with your current user
+  WebsiteActivityTracker.init({
+    endpoint: 'http://localhost:3000/api/activity/notify',
+    user: {
+      email: 'user@example.com',
+      name: 'Alex Morgan'
+    }
+  });
+
+  // 3. Trigger confirmation emails on any website action:
+  
+  // When user logs in:
+  await WebsiteActivityTracker.trackLogin();
+
+  // When user changes password:
+  await WebsiteActivityTracker.trackPasswordChange();
+
+  // When user updates their profile:
+  await WebsiteActivityTracker.trackProfileUpdate(['Phone Number', 'Billing Address']);
+
+  // When user places an order:
+  await WebsiteActivityTracker.trackOrder('ORD-12345', '$89.00', [
+    { name: 'Website Pro Plan', qty: 1, price: '$89.00' }
+  ]);
+
+  // Any custom activity:
+  await WebsiteActivityTracker.track('file_export', {
+    title: 'Financial Report Downloaded',
+    description: 'Your export was successfully generated.',
+    metadata: { 'File': 'q3_report.pdf', 'Size': '2.4MB' }
+  });
+&lt;/script&gt;</code></pre>
+          </div>
+
+          <!-- Node.js snippet -->
+          <div id="code-node" class="code-block">
+            <pre><code>// In your Node.js / Express website backend:
+const { ActivityNotifier } = require('./client-sdk/node-client');
+
+const notifier = new ActivityNotifier({
+  endpoint: 'http://localhost:3000/api/activity/notify'
+});
+
+// Trigger confirmation email inside your route handler:
+app.post('/api/user/login', async (req, res) => {
+  // ... authenticate user ...
+  
+  // Send activity confirmation email asynchronously
+  await notifier.notifyLogin({
+    email: user.email,
+    name: user.name
+  }, req);
+
+  res.json({ success: true });
+});
+
+// Trigger on password change:
+await notifier.notifyPasswordChanged({ email: user.email, name: user.name }, req);
+
+// Trigger on custom activity:
+await notifier.notifyCustomActivity({ email: user.email, name: user.name }, {
+  type: 'security_setting_updated',
+  title: 'Two-Factor Authentication Enabled',
+  description: 'Two-factor authentication has been enabled for your website account.',
+  metadata: { 'Method': 'Authenticator App (TOTP)' }
+});</code></pre>
+          </div>
+
+          <!-- Python snippet -->
+          <div id="code-python" class="code-block">
+            <pre><code># In your Python / Flask / Django / FastAPI website:
+from client_sdk.python_client import ActivityNotifier
+
+notifier = ActivityNotifier(endpoint="http://localhost:3000/api/activity/notify")
+
+# Trigger on sign-in:
+notifier.notify_login(
+    user={"email": "alice@example.com", "name": "Alice"},
+    ip=request.remote_addr,
+    user_agent=request.headers.get("User-Agent")
+)
+
+# Trigger on password change:
+notifier.notify_password_changed(
+    user={"email": "alice@example.com", "name": "Alice"},
+    ip=request.remote_addr
+)
+
+# Trigger on custom website activity:
+notifier.notify_custom(
+    user={"email": "alice@example.com", "name": "Alice"},
+    title="Invoice Paid Successfully",
+    description="Your monthly payment of $49.00 was processed.",
+    metadata={"Invoice Number": "INV-2026-089", "Card": "Visa ending in 4242"},
+    action_url="https://yourwebsite.com/billing"
+)</code></pre>
+          </div>
+
+          <!-- cURL snippet -->
+          <div id="code-curl" class="code-block">
+            <pre><code>curl -X POST http://localhost:3000/api/activity/notify \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user": {
+      "email": "user@example.com",
+      "name": "Alex Morgan"
+    },
+    "activity": {
+      "type": "login",
+      "title": "New Sign-In Detected",
+      "ip": "203.0.113.1",
+      "device": "Chrome on Windows 11",
+      "actionUrl": "https://yourwebsite.com/security"
+    }
+  }'</code></pre>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: SMTP & Settings -->
+    <section id="tab-settings" class="tab-pane">
+      <div class="grid-2col">
+        <!-- Configuration Status -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Current Mailer Setup</h2>
+            <span id="configModeBadge" class="badge badge-blue">Loading...</span>
+          </div>
+          <div class="card-body">
+            <table class="config-table">
+              <tr>
+                <td><strong>Transport Mode:</strong></td>
+                <td id="cfgMode">-</td>
+              </tr>
+              <tr>
+                <td><strong>SMTP Host:</strong></td>
+                <td id="cfgHost">-</td>
+              </tr>
+              <tr>
+                <td><strong>Company Name:</strong></td>
+                <td id="cfgCompany">-</td>
+              </tr>
+              <tr>
+                <td><strong>Support Email:</strong></td>
+                <td id="cfgSupport">-</td>
+              </tr>
+              <tr>
+                <td><strong>API Key Protection:</strong></td>
+                <td id="cfgAuth">-</td>
+              </tr>
+            </table>
+
+            <div class="notice-box mt-4">
+              <h4>Switching from Test Mode to Real SMTP:</h4>
+              <p class="text-sm text-muted">
+                To send real emails to inboxes via Gmail, SendGrid, Outlook, etc., edit the <code>.env</code> file:
+              </p>
+              <pre class="code-inline mt-2">USE_ETHEREAL=false
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_gmail_app_password
+EMAIL_FROM="Your Website &lt;no-reply@yourwebsite.com&gt;"</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Test Email -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Send Diagnostic Test Email</h2>
+            <span class="badge badge-green">SMTP Test</span>
+          </div>
+          <div class="card-body">
+            <p class="text-sm text-muted mb-4">
+              Send a test notification to verify that the email transport and templates are functioning without error.
+            </p>
+            <div class="form-group">
+              <label for="testEmailAddr">Destination Email</label>
+              <input type="email" id="testEmailAddr" class="form-control" value="test@example.com" placeholder="user@example.com">
+            </div>
+            <div class="form-group">
+              <label for="testEmailName">Destination Name</label>
+              <input type="text" id="testEmailName" class="form-control" value="Test User" placeholder="Name">
+            </div>
+            <button id="sendTestEmailBtn" class="btn btn-primary w-full">🚀 Send Test Email</button>
+            <div id="testResultMsg" class="mt-3 text-sm hidden"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Custom Activity Modal -->
+  <div id="customModal" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Trigger Custom Activity Notification</h3>
+        <button id="closeModalBtn" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="customTitle">Activity Title <span class="required">*</span></label>
+          <input type="text" id="customTitle" class="form-control" value="Document Shared with Team">
+        </div>
+        <div class="form-group">
+          <label for="customDesc">Activity Description</label>
+          <textarea id="customDesc" class="form-control" rows="2">You shared 'Project Roadmap 2026.pdf' with 4 team members.</textarea>
+        </div>
+        <div class="form-group">
+          <label for="customActionUrl">Action Button URL</label>
+          <input type="url" id="customActionUrl" class="form-control" value="https://example.com/documents/123">
+        </div>
+        <div class="form-group">
+          <label for="customActionText">Action Button Text</label>
+          <input type="text" id="customActionText" class="form-control" value="View Document">
+        </div>
+        <div class="form-group">
+          <label for="customSeverity">Badge Style / Severity</label>
+          <select id="customSeverity" class="form-control">
+            <option value="info">🔵 Info (Blue)</option>
+            <option value="success">🟢 Success (Green)</option>
+            <option value="warning">🟠 Warning (Amber)</option>
+            <option value="danger">🔴 Danger / Alert (Red)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelModalBtn" class="btn btn-outline">Cancel</button>
+        <button id="fireCustomBtn" class="btn btn-primary">Send Custom Notification</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/sdk/website-tracker.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

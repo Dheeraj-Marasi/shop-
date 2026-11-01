@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ShopLedger - Inventory, Sales & Email Notifications</title>
+  <style>
+    :root {
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      --bg: #f6f7f9;
+      --card: #fff;
+      --tx: #1a1d23;
+      --mu: #6b7280;
+      --bd: #e5e7eb;
+      --ac: #2563eb;
+      --rd: #dc2626;
+      --am: #d97706;
+      --gn: #16a34a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme=light]) {
+        color-scheme: dark;
+        --bg: #0f1115;
+        --card: #181b21;
+        --tx: #e8eaed;
+        --mu: #9aa0a6;
+        --bd: #2a2e36;
+        --ac: #60a5fa;
+        --rd: #f87171;
+        --am: #fbbf24;
+        --gn: #4ade80;
+      }
+    }
+    :root[data-theme=dark] {
+      color-scheme: dark;
+      --bg: #0f1115;
+      --card: #181b21;
+      --tx: #e8eaed;
+      --mu: #9aa0a6;
+      --bd: #2a2e36;
+      --ac: #60a5fa;
+      --rd: #f87171;
+      --am: #fbbf24;
+      --gn: #4ade80;
+    }
+    html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--tx);
+      font: 15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    .w { max-width: 1000px; margin: 0 auto; padding: 12px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--bd);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .g {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+    }
+    .k { font-size: 12px; color: var(--mu); }
+    .v { font-size: 22px; font-weight: 700; }
+    input, select, button {
+      font: inherit;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--bd);
+      background: var(--card);
+      color: var(--tx);
+    }
+    button { cursor: pointer; transition: opacity 0.15s ease; }
+    button:hover { opacity: 0.9; }
+    .p { background: var(--ac); color: #fff; border-color: var(--ac); }
+    .d { color: var(--rd); border-color: var(--bd); }
+    .r { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .r > * { flex: 1 1 120px; }
+    .r > button, .r > a { flex: 0 0 auto; }
+    .tabs { display: flex; gap: 6px; overflow-x: auto; margin: 10px 0; }
+    .tabs button { white-space: nowrap; }
+    .tabs .on { background: var(--ac); color: #fff; border-color: var(--ac); }
+    .tw { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 640px; }
+    th, td {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid var(--bd);
+      white-space: nowrap;
+    }
+    th { font-size: 12px; color: var(--mu); }
+    .b {
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .low { background: #fef3c7; color: #92400e; }
+    .out { background: #fee2e2; color: #991b1b; }
+    .ok  { background: #dcfce7; color: #166534; }
+    .info-b { background: #e0f2fe; color: #0369a1; }
+    .m {
+      position: fixed;
+      inset: 0;
+      background: #0008;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      z-index: 99;
+    }
+    .m .card {
+      max-width: 420px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: auto;
+      margin: 0;
+    }
+    .mu { color: var(--mu); }
+    .gn { color: var(--gn); }
+    .rd { color: var(--rd); }
+    h3 { margin: 0 0 8px; }
+    #qr {
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+      background: #fff;
+      border-radius: 8px;
+      margin: 8px 0;
+    }
+    .preview-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #059669;
+      color: #fff;
+      text-decoration: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-top: 6px;
+    }
+    .preview-btn:hover { background: #047857; }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--bd);
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .conn-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+      text-decoration: none;
+    }
+    .toast-box {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 380px;
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto;
+      background: var(--card);
+      border: 1px solid var(--bd);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+      border-radius: 8px;
+      padding: 12px;
+      animation: slideIn 0.25s ease-out;
+      font-size: 13px;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(15px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+<div class="w" id="app"></div>
+<div class="toast-box" id="toasts"></div>
+
+<!-- QR Code Generator Lib -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- Client SDK for Activity Confirmation Email Service -->
+<script src="/sdk/website-tracker.js"></script>
+
+<script>
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 10);
+const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fm = n => '₹' + (+n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+const hash = async p => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p)))].map(b => b.toString(16).padStart(2, '0')).join('');
+const dt = t => new Date(t).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+const val = id => ($('#' + id) ? $('#' + id).value.trim() : '');
+
+// Initialize DB from LocalStorage
+let db;
+try { db = JSON.parse(localStorage.getItem('sl')); } catch (e) {}
+db = db || { users: [], shops: [], items: [], tx: [], mail: [], sess: null };
+const sv = () => { try { localStorage.setItem('sl', JSON.stringify(db)); } catch (e) {} };
+
+let S = {
+  tab: 'dash',
+  q: '',
+  cat: '',
+  low: false,
+  pg: 0,
+  cart: [],
+  shopId: null,
+  modal: null,
+  err: '',
+  mode: 'in',
+  qr: null,
+  serviceOnline: false,
+  serviceMode: 'checking'
+};
+
+const me = () => db.users.find(u => u.id === db.sess);
+const shops = () => db.shops.filter(s => s.uid === db.sess);
+const shop = () => shops().find(s => s.id === S.shopId) || shops()[0];
+const items = () => (shop() ? db.items.filter(i => i.sid === shop().id) : []);
+const txs = () => (shop() ? db.tx.filter(t => t.sid === shop().id) : []);
+
+// Toast Notification
+function showToast(title, previewUrl) {
+  const c = $('#toasts');
+  if (!c) return;
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `
+    <div style="font-weight:600; margin-bottom:4px;">${h(title)}</div>
+    ${previewUrl ? `<a href="${previewUrl}" target="_blank" class="preview-btn">🔗 Open Live Email Preview</a>` : '<div class="k">Dispatched via Activity Email Service</div>'}
+  `;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 7000);
+}
+
+// Check Backend Email Service Health
+async function checkServiceHealth() {
+  try {
+    const res = await fetch('/api/config');
+    if (res.ok) {
+      const data = await res.json();
+      S.serviceOnline = true;
+      S.serviceMode = data.mailer?.mode || 'active';
+    } else {
+      S.serviceOnline = false;
+      S.serviceMode = 'offline';
+    }
+  } catch (e) {
+    S.serviceOnline = false;
+    S.serviceMode = 'offline';
+  }
+  render();
+}
+
+// Dispatches a real transactional email via the Activity Notification Service
+async function sendRealEmail(activityType, subj, body, details = {}, severity = 'info') {
+  const u = me();
+  if (!u || !u.email) return;
+
+  const mailRecord = {
+    id: uid(),
+    uid: u.id,
+    ts: Date.now(),
+    subj,
+    body,
+    type: activityType,
+    status: 'sending',
+    previewUrl: null
+  };
+  db.mail.unshift(mailRecord);
+  sv();
+  render();
+
+  try {
+    let result = null;
+
+    if (window.WebsiteActivityTracker) {
+      window.WebsiteActivityTracker.setUser({ email: u.email, name: u.name });
+      
+      if (activityType === 'order_placed' || activityType === 'purchase') {
+        result = await window.WebsiteActivityTracker.trackOrder(
+          details.orderId || uid(),
+          details.total || '₹0',
+          details.items || [],
+          {
+            title: subj,
+            description: body,
+            actionUrl: window.location.href,
+            actionText: 'View in ShopLedger',
+            details: Object.assign({ shopName: shop() ? shop().name : 'Shop' }, details)
+          }
+        );
+      } else if (activityType === 'signup') {
+        result = await window.WebsiteActivityTracker.trackSignup({
+          title: subj,
+          description: body,
+          actionUrl: window.location.href,
+          actionText: 'Open ShopLedger',
+          details: { email: u.email, name: u.name }
+        });
+      } else if (activityType === 'login') {
+        result = await window.WebsiteActivityTracker.trackLogin({
+          title: subj,
+          description: body,
+          actionUrl: window.location.href,
+          actionText: 'ShopLedger Security Settings'
+        });
+      } else {
+        result = await window.WebsiteActivityTracker.track(activityType, {
+          title: subj,
+          description: body,
+          severity,
+          actionUrl: window.location.href,
+          actionText: 'View in ShopLedger',
+          details,
+          metadata: details
+        });
+      }
+    } else {
+      // Direct REST API fallback
+      const resp = await fetch('/api/activity/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user: { email: u.email, name: u.name },
+          activity: {
+            type: activityType,
+            title: subj,
+            description: body,
+            severity,
+            actionUrl: window.location.href,
+            actionText: 'View in ShopLedger',
+            details,
+            metadata: details
+          }
+        })
+      });
+      result = await resp.json();
+    }
+
+    if (result && result.success) {
+      mailRecord.status = 'sent';
+      mailRecord.previewUrl = result.previewUrl || null;
+      showToast(`✉️ Email sent: ${subj}`, result.previewUrl);
+    } else {
+      mailRecord.status = 'failed';
+      mailRecord.error = result?.error || 'Send failed';
+    }
+  } catch (err) {
+    console.error('Email dispatch error:', err);
+    mailRecord.status = 'failed';
+    mailRecord.error = err.message;
+  }
+
+  sv();
+  render();
+}
+
+/* Auth */
+async function auth() {
+  const e = val('em').toLowerCase(), p = $('#pw').value;
+  S.err = '';
+  if (!/^\S+@\S+\.\S+$/.test(e) || p.length < 6) {
+    S.err = 'Enter a valid email and a password of 6+ characters.';
+    return render();
+  }
+  const ph = await hash(p), u = db.users.find(x => x.email === e);
+
+  if (S.mode === 'up') {
+    if (u) {
+      S.err = 'Account already exists.';
+      return render();
+    }
+    const n = { id: uid(), email: e, name: val('nm') || e.split('@')[0], ph };
+    db.users.push(n);
+    db.sess = n.id;
+    sv();
+    sendRealEmail('signup', 'Welcome to ShopLedger', `Your account was created successfully. Create your first shop to start tracking inventory, sales, and profits.`, { 'User Name': n.name, 'Email': n.email });
+  } else {
+    if (!u || u.ph !== ph) {
+      S.err = 'Wrong email or password.';
+      return render();
+    }
+    db.sess = u.id;
+    sv();
+    sendRealEmail('login', 'New Sign-In to ShopLedger', `A new sign-in was detected for ${u.name} (${u.email}) on ${dt(Date.now())}.`, { 'User Name': u.name, 'Email': u.email });
+  }
+  S.shopId = null;
+  sv();
+  render();
+}
+
+function logout() {
+  db.sess = null;
+  if (window.WebsiteActivityTracker) window.WebsiteActivityTracker.clearUser();
+  sv();
+  render();
+}
+
+/* Shops */
+function newShop() {
+  const n = val('sn');
+  if (!n) return;
+  const s = { id: uid(), uid: db.sess, name: n, upi: val('su'), th: +val('st') || 5 };
+  db.shops.push(s);
+  S.shopId = s.id;
+  S.modal = null;
+  sv();
+  sendRealEmail(
+    'shop_created',
+    'New shop created: ' + n,
+    `Shop "${n}" was created. Low-stock alert level: below ${s.th} units.`,
+    { 'Shop Name': n, 'UPI ID': s.upi || 'Not configured', 'Low Stock Threshold': `${s.th} units` },
+    'success'
+  );
+  render();
+}
+
+/* Stock */
+const low = i => (shop() ? i.stock < shop().th : false);
+function chk(i) {
+  if (low(i) && !i.al) {
+    i.al = 1;
+    sendRealEmail(
+      'low_stock_alert',
+      '⚠️ Low stock alert: ' + i.name,
+      `${i.name} has only ${i.stock} units left in ${shop().name}. Please restock soon.`,
+      { 'Item': i.name, 'Remaining Stock': `${i.stock} units`, 'Threshold': `${shop().th} units`, 'Shop': shop().name },
+      'warning'
+    );
+  }
+  if (!low(i)) i.al = 0;
+}
+
+function addItem() {
+  const n = val('in'), q = +val('iq'), c = +val('ic'), p = +val('ip');
+  if (!n || q < 0 || c < 0 || p < 0 || isNaN(q + c + p)) {
+    S.err = 'Fill all item fields with valid numbers.';
+    return render();
+  }
+  const i = { id: uid(), sid: shop().id, name: n, cat: val('icat') || 'General', cost: c, price: p, stock: q, al: 0 };
+  db.items.push(i);
+  db.tx.push({ id: uid(), sid: i.sid, iid: i.id, type: 'RESTOCK', qty: q, cost: c, price: p, ts: Date.now() });
+  
+  sendRealEmail(
+    'item_added',
+    'Item added: ' + n,
+    `${n} added to ${shop().name} with ${q} units, cost ${fm(c)}, selling price ${fm(p)}.`,
+    { 'Item': n, 'Category': i.cat, 'Initial Units': q, 'Cost Price': fm(c), 'Selling Price': fm(p), 'Shop': shop().name },
+    'info'
+  );
+
+  chk(i);
+  S.modal = null;
+  S.err = '';
+  sv();
+  render();
+}
+
+function restock() {
+  const i = db.items.find(x => x.id === S.modal.id), q = +val('rq'), c = +val('rc');
+  if (!(q > 0) || !(c >= 0)) {
+    S.err = 'Enter a quantity above 0.';
+    return render();
+  }
+  i.stock += q;
+  i.cost = c;
+  db.tx.push({ id: uid(), sid: i.sid, iid: i.id, type: 'RESTOCK', qty: q, cost: c, price: i.price, ts: Date.now() });
+
+  sendRealEmail(
+    'restock',
+    'Restocked: ' + i.name,
+    `${q} units of ${i.name} added to ${shop().name}. New stock: ${i.stock}.`,
+    { 'Item': i.name, 'Quantity Added': `+${q}`, 'New Stock Level': `${i.stock} units`, 'Cost Price': fm(c), 'Shop': shop().name },
+    'success'
+  );
+
+  chk(i);
+  S.modal = null;
+  S.err = '';
+  sv();
+  render();
+}
+
+function delItem(id) {
+  const i = db.items.find(x => x.id === id);
+  if (!i || !confirm('Delete ' + i.name + '?')) return;
+  db.items = db.items.filter(x => x.id !== id);
+  sendRealEmail(
+    'item_deleted',
+    'Item deleted: ' + i.name,
+    `${i.name} was removed from ${shop().name}.`,
+    { 'Deleted Item': i.name, 'Shop': shop().name },
+    'danger'
+  );
+  sv();
+  render();
+}
+
+/* Sales & Checkout */
+function cartAdd(id) {
+  const i = db.items.find(x => x.id === id), c = S.cart.find(x => x.id === id);
+  if (c) {
+    if (c.q < i.stock) c.q++;
+  } else if (i.stock > 0) {
+    S.cart.push({ id, q: 1 });
+  }
+  render();
+}
+
+function cartQ(id, d) {
+  const c = S.cart.find(x => x.id === id), i = db.items.find(x => x.id === id);
+  c.q = Math.max(0, Math.min(i.stock, c.q + d));
+  S.cart = S.cart.filter(x => x.q > 0);
+  render();
+}
+
+const total = () => S.cart.reduce((a, c) => a + c.q * db.items.find(x => x.id === c.id).price, 0);
+
+function pay(m) {
+  if (!S.cart.length) return;
+  if (m === 'UPI') {
+    if (!shop().upi) {
+      S.err = 'Add a UPI ID to this shop first (Shop QR button).';
+      return render();
+    }
+    S.modal = { t: 'qr', amt: total() };
+  } else {
+    done(m);
+  }
+  render();
+}
+
+function done(m) {
+  const T = total(), bill = uid();
+  const saleItems = [];
+  
+  S.cart.forEach(c => {
+    const i = db.items.find(x => x.id === c.id);
+    i.stock -= c.q;
+    saleItems.push({ name: i.name, qty: c.q, price: fm(c.q * i.price) });
+    db.tx.push({ id: uid(), sid: i.sid, iid: i.id, type: 'SALE', qty: c.q, cost: i.cost, price: i.price, ts: Date.now(), bill, m });
+    chk(i);
+  });
+
+  // Send Order Placement Transactional Email
+  sendRealEmail(
+    'order_placed',
+    `Sale Receipt #${bill} - ${fm(T)}`,
+    `A sale of ${fm(T)} was completed via ${m} at ${shop().name}.`,
+    {
+      orderId: bill,
+      total: fm(T),
+      paymentMethod: m,
+      shopName: shop().name,
+      items: saleItems
+    },
+    'success'
+  );
+
+  S.cart = [];
+  S.modal = null;
+  S.err = '';
+  sv();
+  alert('Sale of ' + fm(T) + ' recorded (' + m + '). Confirmation email dispatched!');
+}
+
+function shopQR() {
+  S.modal = { t: 'qr', amt: 0, static: 1 };
+  render();
+}
+
+function setUpi() {
+  shop().upi = val('su2');
+  sv();
+  render();
+}
+
+/* Views & Aggregations */
+function stats() {
+  const M = {};
+  items().forEach(i => M[i.id] = { add: 0, sold: 0, profit: 0, rev: 0 });
+  txs().forEach(t => {
+    const m = M[t.iid];
+    if (!m) return;
+    if (t.type === 'RESTOCK') m.add += t.qty;
+    else {
+      m.sold += t.qty;
+      m.rev += t.qty * t.price;
+      m.profit += t.qty * (t.price - t.cost);
+    }
+  });
+  return M;
+}
+
+const badge = i => i.stock === 0 ? '<span class="b out">Out of stock</span>' : low(i) ? '<span class="b low">Restock needed</span>' : '<span class="b ok">OK</span>';
+
+function authV() {
+  return `
+  <div class="card" style="max-width:380px;margin:8vh auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <h2 style="margin:0">ShopLedger</h2>
+      <a href="/" class="conn-status" title="View Control Center">⚡ Email Microservice</a>
+    </div>
+    <p class="mu">Inventory, sales and transactional email notifications for your shops.</p>
+    ${S.mode === 'up' ? '<p><input id="nm" placeholder="Your name" style="width:100%"></p>' : ''}
+    <p><input id="em" type="email" placeholder="Email (receives actual notifications)" style="width:100%"></p>
+    <p><input id="pw" type="password" placeholder="Password (6+ chars)" style="width:100%"></p>
+    ${S.err ? `<p class="rd">${h(S.err)}</p>` : ''}
+    <div class="r">
+      <button class="p" onclick="auth()">${S.mode === 'up' ? 'Create account' : 'Log in'}</button>
+      <button onclick="S.mode = S.mode === 'up' ? 'in' : 'up'; S.err = ''; render()">${S.mode === 'up' ? 'I have an account' : 'Sign up'}</button>
+    </div>
+    <p class="k" style="margin-top:14px">Connected to the Activity Email Notification Service running on this server.</p>
+  </div>`;
+}
+
+function dashV() {
+  const it = items(), M = stats(), T = txs(), L = it.filter(low).sort((a, b) => a.stock - b.stock);
+  const sum = k => Object.values(M).reduce((a, m) => a + m[k], 0);
+  const lr = T.filter(t => t.type === 'RESTOCK').sort((a, b) => b.ts - a.ts).slice(0, 5);
+  const top = [...it].sort((a, b) => M[b.id].sold - M[a.id].sold).filter(i => M[i.id].sold).slice(0, 5);
+  const nm = id => (db.items.find(x => x.id === id) || { name: '(deleted)' }).name;
+
+  return `
+  <div class="g">
+    ${[
+      ['Items', it.length],
+      ['Units added', sum('add')],
+      ['Units sold', sum('sold')],
+      ['Remaining', it.reduce((a, i) => a + i.stock, 0)],
+      ['Revenue', fm(sum('rev'))],
+      ['Profit', fm(sum('profit'))],
+      ['Stock value', fm(it.reduce((a, i) => a + i.stock * i.cost, 0))]
+    ].map(x => `<div class="card"><div class="k">${x[0]}</div><div class="v">${x[1]}</div></div>`).join('')}
+  </div>
+  <div class="card">
+    <h3 class="${L.length ? 'rd' : ''}">Items to restock (${L.length})</h3>
+    ${L.length ? L.map(i => `
+      <div class="r" style="padding:4px 0">
+        <span>${h(i.name)} ${badge(i)} <span class="mu">${i.stock} left</span></span>
+        <button class="p" onclick="S.modal={t:'rs',id:'${i.id}'};render()">Restock</button>
+      </div>`).join('') : '<span class="mu">All items are well stocked.</span>'}
+  </div>
+  <div class="card">
+    <h3>Recent restocks</h3>
+    ${lr.length ? lr.map((t, k) => `
+      <div>${k ? '' : '<span class="b ok">Latest</span> '}<b>${h(nm(t.iid))}</b>: +${t.qty} at ${fm(t.cost)} <span class="mu">${dt(t.ts)}</span></div>
+    `).join('') : '<span class="mu">None yet.</span>'}
+  </div>
+  <div class="card">
+    <h3>Top sellers</h3>
+    ${top.length ? top.map(i => `
+      <div><b>${h(i.name)}</b>: ${M[i.id].sold} sold, profit ${fm(M[i.id].profit)}</div>
+    `).join('') : '<span class="mu">No sales yet.</span>'}
+  </div>`;
+}
+
+function itemsV() {
+  const M = stats(), all = items(), cats = [...new Set(all.map(i => i.cat))].sort(), q = S.q.toLowerCase();
+  let f = all.filter(i => (!q || i.name.toLowerCase().includes(q)) && (!S.cat || i.cat === S.cat) && (!S.low || low(i)));
+  const P = 15, pages = Math.max(1, Math.ceil(f.length / P));
+  S.pg = Math.min(S.pg, pages - 1);
+
+  return `
+  <div class="card">
+    <div class="r">
+      <input placeholder="Search items" value="${h(S.q)}" oninput="S.q=this.value;S.pg=0;render(1)">
+      <select onchange="S.cat=this.value;S.pg=0;render()">
+        <option value="">All categories</option>
+        ${cats.map(c => `<option ${c === S.cat ? 'selected' : ''}>${h(c)}</option>`).join('')}
+      </select>
+      <label style="flex:0 0 auto"><input type="checkbox" style="flex:none" ${S.low ? 'checked' : ''} onchange="S.low=this.checked;S.pg=0;render()"> Low stock only</label>
+      <button class="p" onclick="S.modal={t:'it'};S.err='';render()">+ Add item</button>
+    </div>
+  </div>
+  <div class="card tw">
+    <table>
+      <tr><th>Item</th><th>Category</th><th>Added</th><th>Sold</th><th>Left</th><th>Profit</th><th>Status</th><th>Actions</th></tr>
+      ${f.slice(S.pg * P, S.pg * P + P).map(i => {
+        const m = M[i.id];
+        return `<tr>
+          <td><b>${h(i.name)}</b><div class="k">${fm(i.cost)} cost / ${fm(i.price)} price</div></td>
+          <td>${h(i.cat)}</td>
+          <td>${m.add}</td>
+          <td>${m.sold}</td>
+          <td><b>${i.stock}</b></td>
+          <td class="${m.profit >= 0 ? 'gn' : 'rd'}">${fm(m.profit)}</td>
+          <td>${badge(i)}</td>
+          <td>
+            <button onclick="S.modal={t:'rs',id:'${i.id}'};S.err='';render()">Restock</button>
+            <button class="d" onclick="delItem('${i.id}')">Delete</button>
+          </td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="8" class="mu">No items found.</td></tr>'}
+    </table>
+    <div class="r" style="margin-top:8px">
+      <button ${S.pg ? '' : 'disabled'} onclick="S.pg--;render()">Prev</button>
+      <span class="mu" style="flex:0 0 auto">Page ${S.pg + 1} of ${pages} (${f.length} items)</span>
+      <button ${S.pg < pages - 1 ? '' : 'disabled'} onclick="S.pg++;render()">Next</button>
+    </div>
+  </div>`;
+}
+
+function sellV() {
+  const q = S.q.toLowerCase(), f = items().filter(i => !q || i.name.toLowerCase().includes(q)).slice(0, 30);
+  return `
+  <div class="card">
+    <input placeholder="Search item to sell" style="width:100%" value="${h(S.q)}" oninput="S.q=this.value;render(1)">
+    <div style="margin-top:8px">
+      ${f.map(i => `
+        <div class="r" style="padding:4px 0">
+          <span><b>${h(i.name)}</b> <span class="mu">${fm(i.price)}, ${i.stock} in stock</span></span>
+          <button ${i.stock ? '' : 'disabled'} onclick="cartAdd('${i.id}')">+ Add to Bill</button>
+        </div>
+      `).join('') || '<span class="mu">No items in inventory.</span>'}
+    </div>
+  </div>
+  <div class="card">
+    <h3>Bill / Current Cart</h3>
+    ${S.cart.map(c => {
+      const i = db.items.find(x => x.id === c.id);
+      return `
+      <div class="r" style="padding:4px 0; border-bottom:1px solid var(--bd)">
+        <span><b>${h(i.name)}</b> <span class="mu">(${fm(i.price)} each)</span></span>
+        <span style="flex:0 0 auto">
+          <button onclick="cartQ('${c.id}',-1)">-</button>
+          <b> ${c.q} </b>
+          <button onclick="cartQ('${c.id}',1)">+</button>
+          <span style="margin-left:8px; font-weight:600">${fm(c.q * i.price)}</span>
+        </span>
+      </div>`;
+    }).join('') || '<span class="mu">Cart is empty. Add items from above.</span>'}
+    
+    <div class="v" style="margin:12px 0">Total ${fm(total())}</div>
+    ${S.err ? `<p class="rd">${h(S.err)}</p>` : ''}
+    <div class="r">
+      <button class="p" ${S.cart.length ? '' : 'disabled'} onclick="pay('UPI')">Pay by UPI QR</button>
+      <button ${S.cart.length ? '' : 'disabled'} onclick="pay('Cash')">Paid in Cash</button>
+    </div>
+    <p class="k" style="margin-top:8px">Recording a sale automatically dispatches an itemized confirmation receipt email to ${h(me().email)}.</p>
+  </div>`;
+}
+
+function histV() {
+  const T = txs().sort((a, b) => b.ts - a.ts).slice(0, 100);
+  const nm = id => (db.items.find(x => x.id === id) || { name: '(deleted)' }).name;
+  return `
+  <div class="card tw">
+    <table>
+      <tr><th>When</th><th>Type</th><th>Item</th><th>Qty</th><th>Amount</th></tr>
+      ${T.map(t => `
+        <tr>
+          <td>${dt(t.ts)}</td>
+          <td><b>${t.type}${t.m ? ' (' + t.m + ')' : ''}</b></td>
+          <td>${h(nm(t.iid))}</td>
+          <td>${t.qty}</td>
+          <td>${fm(t.qty * (t.type === 'SALE' ? t.price : t.cost))}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="5" class="mu">No activity yet.</td></tr>'}
+    </table>
+  </div>`;
+}
+
+async function sendManualTestEmail() {
+  sendRealEmail(
+    'test_activity',
+    '⚡ ShopLedger Test Notification',
+    `This is a test notification confirming that ShopLedger is connected to the Activity Confirmation Email Service.`,
+    {
+      'Test Run Time': dt(Date.now()),
+      'Active Shop': shop() ? shop().name : 'Default',
+      'System Status': 'Fully Operational'
+    },
+    'success'
+  );
+}
+
+function clearMailHistory() {
+  if (!confirm('Clear local email log?')) return;
+  db.mail = db.mail.filter(m => m.uid !== db.sess);
+  sv();
+  render();
+}
+
+function mailV() {
+  const M = db.mail.filter(m => m.uid === db.sess);
+  return `
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
+      <div>
+        <h3 style="margin:0">Transactional Confirmation Emails</h3>
+        <p class="mu" style="margin:4px 0 0 0">
+          Emails sent to <b>${h(me().email)}</b> via the Activity Email Service.
+          ${S.serviceOnline ? `<span class="b ok">Microservice Connected (${S.serviceMode.toUpperCase()})</span>` : '<span class="b out">Microservice Offline</span>'}
+        </p>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button class="p" onclick="sendManualTestEmail()">✉️ Send Test Email</button>
+        <button class="d" onclick="clearMailHistory()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    ${M.map(m => `
+      <div style="padding:10px 0; border-bottom:1px solid var(--bd)">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <b>${h(m.subj)}</b>
+          <span class="b ${m.status === 'sent' ? 'ok' : m.status === 'sending' ? 'info-b' : 'out'}">
+            ${(m.status || 'sent').toUpperCase()}
+          </span>
+        </div>
+        <div style="margin:4px 0; color:var(--tx)">${h(m.body)}</div>
+        <div class="k">${dt(m.ts)}</div>
+        ${m.previewUrl ? `
+          <div>
+            <a href="${m.previewUrl}" target="_blank" class="preview-btn">
+              🔗 Open Rendered Email in Ethereal Test Inbox
+            </a>
+          </div>
+        ` : ''}
+      </div>
+    `).join('') || '<span class="mu">No emails recorded yet. Trigger any activity (restock, sale, login) to dispatch an email.</span>'}
+  </div>`;
+}
+
+function modalV() {
+  const m = S.modal;
+  if (!m) return '';
+  let b = '';
+
+  if (m.t === 'shop') {
+    b = `
+    <h3>New Shop</h3>
+    <p><input id="sn" placeholder="Shop name" style="width:100%"></p>
+    <p><input id="su" placeholder="UPI ID (optional, e.g. merchant@upi)" style="width:100%"></p>
+    <p><input id="st" type="number" placeholder="Low-stock level (default 5)" style="width:100%"></p>
+    <div class="r">
+      <button class="p" onclick="newShop()">Create</button>
+      <button onclick="S.modal=null;render()">Cancel</button>
+    </div>`;
+  }
+
+  if (m.t === 'it') {
+    b = `
+    <h3>Add Item</h3>
+    <p><input id="in" placeholder="Item name" style="width:100%"></p>
+    <p><input id="icat" placeholder="Category (e.g. Groceries, Electronics)" style="width:100%"></p>
+    <div class="r">
+      <input id="iq" type="number" placeholder="Quantity">
+      <input id="ic" type="number" placeholder="Cost price">
+      <input id="ip" type="number" placeholder="Selling price">
+    </div>
+    ${S.err ? `<p class="rd">${h(S.err)}</p>` : ''}
+    <div class="r" style="margin-top:8px">
+      <button class="p" onclick="addItem()">Save</button>
+      <button onclick="S.modal=null;render()">Cancel</button>
+    </div>`;
+  }
+
+  if (m.t === 'rs') {
+    const i = db.items.find(x => x.id === m.id);
+    b = `
+    <h3>Restock ${h(i.name)}</h3>
+    <p class="mu">Current stock: <b>${i.stock}</b></p>
+    <div class="r">
+      <input id="rq" type="number" placeholder="Quantity added">
+      <input id="rc" type="number" placeholder="Cost price" value="${i.cost}">
+    </div>
+    ${S.err ? `<p class="rd">${h(S.err)}</p>` : ''}
+    <div class="r" style="margin-top:8px">
+      <button class="p" onclick="restock()">Save restock</button>
+      <button onclick="S.modal=null;render()">Cancel</button>
+    </div>`;
+  }
+
+  if (m.t === 'qr') {
+    const s = shop();
+    b = `
+    <h3>${m.static ? 'Shop Payment QR' : 'Scan to pay ' + fm(m.amt)}</h3>
+    <div id="qr"></div>
+    ${s.upi ? '' : '<p class="mu">Configure a UPI ID to generate the payment QR code.</p>'}
+    <div class="r">
+      <input id="su2" placeholder="UPI ID" value="${h(s.upi || '')}">
+      <button onclick="setUpi()">Save UPI</button>
+    </div>
+    <div class="r" style="margin-top:8px">
+      ${m.static ? '' : '<button class="p" onclick="done(\'UPI\');render()">Payment Received</button>'}
+      <button onclick="S.modal=null;render()">Close</button>
+    </div>`;
+  }
+
+  return `<div class="m"><div class="card">${b}</div></div>`;
+}
+
+function appV() {
+  const s = shops();
+  if (!s.length) {
+    return `
+    <div class="header-bar">
+      <div><b>Welcome, ${h(me().name)}</b></div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <a href="/" class="conn-status">⚡ Control Center</a>
+        <button onclick="logout()">Log out</button>
+      </div>
+    </div>
+    <div class="card">
+      <p>Create your first shop to begin managing inventory and sales.</p>
+      <button class="p" onclick="S.modal={t:'shop'};render()">Create shop</button>
+    </div>
+    ${modalV()}`;
+  }
+
+  const cur = shop();
+  S.shopId = cur.id;
+  const T = [
+    ['dash', 'Dashboard'],
+    ['items', 'Items'],
+    ['sell', 'Sell'],
+    ['hist', 'History'],
+    ['mail', 'Emails (' + db.mail.filter(m => m.uid === db.sess).length + ')']
+  ];
+
+  return `
+  <div class="header-bar">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <b>ShopLedger</b>
+      <select onchange="S.shopId=this.value;S.cart=[];S.pg=0;render()">
+        ${s.map(x => `<option value="${x.id}" ${x.id === cur.id ? 'selected' : ''}>${h(x.name)}</option>`).join('')}
+      </select>
+    </div>
+    <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+      <button onclick="S.modal={t:'shop'};render()">+ Shop</button>
+      <button onclick="shopQR()">Shop QR</button>
+      <a href="/" class="conn-status" title="Open Activity Notification Control Center">⚡ Control Center</a>
+      <button onclick="logout()">Log out</button>
+    </div>
+  </div>
+  <div class="tabs">
+    ${T.map(t => `<button class="${S.tab === t[0] ? 'on' : ''}" onclick="S.tab='${t[0]}';S.q='';S.err='';render()">${t[1]}</button>`).join('')}
+  </div>
+  ${{ dash: dashV, items: itemsV, sell: sellV, hist: histV, mail: mailV }[S.tab]()}
+  ${modalV()}`;
+}
+
+function render(keep) {
+  const a = document.activeElement, id = a && a.id, pos = a && a.selectionStart;
+  $('#app').innerHTML = db.sess && me() ? appV() : authV();
+
+  const m = S.modal;
+  if (m && m.t === 'qr' && $('#qr') && shop() && shop().upi && window.QRCode) {
+    const s = shop();
+    const u = 'upi://pay?pa=' + encodeURIComponent(s.upi) + '&pn=' + encodeURIComponent(s.name) + '&cu=INR' + (m.amt ? '&am=' + m.amt.toFixed(2) : '');
+    $('#qr').innerHTML = '';
+    new QRCode($('#qr'), { text: u, width: 200, height: 200 });
+  }
+
+  if (keep) {
+    const el = $('input[placeholder^="Search"]');
+    if (el) {
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    }
+  }
+}
+
+// Initial Boot
+checkServiceHealth();
+if (window.WebsiteActivityTracker && me()) {
+  window.WebsiteActivityTracker.setUser({ email: me().email, name: me().name });
+}
+render();
+</script>
+</body>
+</html>
