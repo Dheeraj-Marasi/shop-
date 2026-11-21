@@ -6,6 +6,11 @@ package-lock.json
 .env
 .env.local
 .env.*.local
+*.key
+*.pem
+id_rsa*
+id_ed25519*
+*_key*
 
 # Logs
 logs
